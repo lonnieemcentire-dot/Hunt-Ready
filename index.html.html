@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hunt Ready — Workout Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1008;
+    --bg2: #161a0d;
+    --bg3: #1d2212;
+    --card: #1a1f10;
+    --border: #2a3018;
+    --border2: #3a4520;
+    --accent: #8fb339;
+    --accent2: #c8e668;
+    --accent3: #5c7a1f;
+    --amber: #d4872a;
+    --amber2: #f0a83a;
+    --red: #c44030;
+    --red2: #e05040;
+    --text: #e8edd8;
+    --text2: #9aa880;
+    --text3: #5a6645;
+    --success: #6aad3a;
+    --phase1: #8fb339;
+    --phase2: #d4872a;
+    --phase3: #c44030;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grain texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  .app { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--accent3);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .nav { padding: 12px 0; flex: 1; }
+
+  .nav-section-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 8px 20px 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    letter-spacing: 0.02em;
+  }
+
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(143,179,57,0.08); color: var(--accent2); border-left-color: var(--accent); }
+
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+  .phase-status {
+    margin: 8px 12px;
+    padding: 12px;
+    background: var(--bg3);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .phase-label { font-size: 10px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .phase-name { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; color: var(--accent2); }
+  .phase-weeks { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .phase-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .phase-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+  .sidebar-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* MAIN */
+  .main { margin-left: 240px; flex: 1; }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0;
+    z-index: 50;
+  }
+
+  .topbar-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .topbar-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+  .topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+
+  .btn:hover { border-color: var(--accent3); color: var(--text); }
+
+  .btn-primary {
+    background: var(--accent3);
+    border-color: var(--accent);
+    color: var(--accent2);
+  }
+
+  .btn-primary:hover { background: var(--accent); color: var(--bg); }
+
+  /* CONTENT */
+  .content { padding: 28px 32px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* DASHBOARD */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+  .stat-val { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-unit { font-size: 13px; font-weight: 400; color: var(--text2); margin-left: 2px; }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .stat-accent { color: var(--accent2); }
+  .stat-amber { color: var(--amber2); }
+
+  .dash-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .card-body { padding: 18px; }
+
+  /* CALENDAR HEATMAP */
+  .heat-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; }
+
+  .heat-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.1s;
+    position: relative;
+  }
+
+  .heat-cell:hover { transform: scale(1.2); z-index: 10; }
+  .heat-cell.done { background: var(--accent3); }
+  .heat-cell.done.strong { background: var(--accent); }
+  .heat-cell.rest { background: rgba(212,135,42,0.2); }
+  .heat-cell.today { outline: 2px solid var(--accent2); outline-offset: 1px; }
+
+  .heat-legend { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 11px; color: var(--text3); }
+  .heat-swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* RECENT SESSIONS */
+  .session-list { display: flex; flex-direction: column; gap: 0; }
+
+  .session-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .session-item:last-child { border-bottom: none; }
+  .session-item:hover { background: var(--bg3); }
+
+  .session-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-a { background: var(--accent); }
+  .dot-b { background: var(--amber); }
+  .dot-c { background: var(--red); }
+  .dot-d { background: #7a6fd4; }
+
+  .session-info { flex: 1; }
+  .session-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .session-meta { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .session-rating { font-size: 13px; }
+
+  /* PROGRESS BARS */
+  .progress-section { margin-bottom: 14px; }
+  .prog-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+  .prog-name { color: var(--text2); }
+  .prog-val { color: var(--accent2); font-weight: 500; }
+  .prog-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+  .fill-green { background: var(--accent); }
+  .fill-amber { background: var(--amber); }
+  .fill-red { background: var(--red); }
+
+  /* LOG WORKOUT PAGE */
+  .log-layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+
+  .day-selector { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .day-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .day-btn:hover { border-color: var(--accent3); color: var(--text); }
+  .day-btn.active { background: var(--accent3); border-color: var(--accent); color: var(--accent2); }
+
+  .exercise-table { width: 100%; border-collapse: collapse; }
+
+  .exercise-table th {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .exercise-table td { padding: 8px 10px; border-bottom: 1px solid rgba(42,48,24,0.5); vertical-align: middle; }
+
+  .exercise-table tr:last-child td { border-bottom: none; }
+
+  .ex-row-name { font-size: 13px; color: var(--text); font-weight: 500; }
+  .ex-row-target { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  .input-sm {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    padding: 4px 8px;
+    width: 60px;
+    text-align: center;
+  }
+
+  .input-sm:focus { outline: none; border-color: var(--accent3); }
+
+  .check-btn {
+    width: 22px; height: 22px;
+    border-radius: 3px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: all 0.12s;
+    color: transparent;
+  }
+
+  .check-btn.checked { background: var(--accent3); border-color: var(--accent); color: var(--accent2); }
+
+  .notes-area {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .notes-area:focus { outline: none; border-color: var(--accent3); }
+
+  .feel-btns { display: flex; gap: 6px; }
+  .feel-btn {
+    flex: 1;
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text3);
+    font-size: 18px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .feel-btn:hover { border-color: var(--border2); background: var(--bg); }
+  .feel-btn.selected { border-color: var(--accent); background: rgba(143,179,57,0.1); }
+
+  /* HISTORY PAGE */
+  .history-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .history-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .history-card:hover { border-color: var(--border2); }
+
+  .history-date-block {
+    text-align: center;
+    min-width: 44px;
+  }
+
+  .history-day { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: var(--accent2); line-height: 1; }
+  .history-month { font-size: 10px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .history-divider { width: 1px; background: var(--border); align-self: stretch; }
+
+  .history-body { flex: 1; }
+  .history-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .history-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .tag { font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+  .tag-phase1 { background: rgba(143,179,57,0.15); color: var(--accent2); }
+  .tag-phase2 { background: rgba(212,135,42,0.15); color: var(--amber2); }
+  .tag-phase3 { background: rgba(196,64,48,0.15); color: var(--red2); }
+  .tag-strength { background: rgba(90,106,69,0.3); color: var(--text2); }
+  .tag-cardio { background: rgba(42,48,80,0.3); color: #8890d4; }
+  .tag-circuit { background: rgba(42,80,48,0.3); color: #7ad48a; }
+  .history-stats { font-size: 12px; color: var(--text3); }
+
+  /* PROGRESS PAGE */
+  .progress-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+  .big-stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .big-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--accent2);
+  }
+
+  .big-label { font-size: 11px; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 6px; }
+
+  .phase-tracker { display: flex; flex-direction: column; gap: 12px; }
+
+  .phase-row { display: flex; align-items: center; gap: 12px; }
+  .phase-icon {
+    width: 32px; height: 32px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 13px;
+    flex-shrink: 0;
+  }
+  .icon-p1 { background: rgba(143,179,57,0.15); color: var(--accent2); }
+  .icon-p2 { background: rgba(212,135,42,0.15); color: var(--amber2); }
+  .icon-p3 { background: rgba(196,64,48,0.15); color: var(--red2); }
+
+  .phase-info { flex: 1; }
+  .phase-row-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .phase-row-detail { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .phase-row-bar { width: 120px; }
+  .phase-row-pct { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; color: var(--text2); width: 36px; text-align: right; }
+
+  /* BODY METRICS */
+  .metric-input-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+
+  .metric-field label { font-size: 10px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+
+  .input-full {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    padding: 7px 10px;
+  }
+
+  .input-full:focus { outline: none; border-color: var(--accent3); }
+
+  /* SEASON COUNTDOWN */
+  .countdown-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .countdown-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 64px;
+    font-weight: 900;
+    color: var(--accent2);
+    line-height: 1;
+  }
+
+  .countdown-label { font-size: 12px; color: var(--text3); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
+  .countdown-date { font-size: 13px; color: var(--text2); margin-top: 8px; }
+
+  /* RESTRICTION BANNER */
+  .restriction-banner {
+    background: rgba(196,64,48,0.08);
+    border: 1px solid rgba(196,64,48,0.25);
+    border-radius: 5px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .restriction-icon { font-size: 14px; margin-top: 1px; flex-shrink: 0; color: var(--red2); }
+  .restriction-text { font-size: 12px; color: rgba(224,80,64,0.85); line-height: 1.5; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 24px;
+    width: 420px;
+    max-width: 90vw;
+  }
+
+  .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px; color: var(--accent2); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--accent3);
+    border: 1px solid var(--accent);
+    color: var(--accent2);
+    padding: 10px 18px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 600;
+    transform: translateY(60px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* DIVIDER */
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .mb16 { margin-bottom: 16px; }
+  .mb24 { margin-bottom: 24px; }
+  .mt16 { margin-top: 16px; }
+
+  select.input-full {
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-icon">🎯</div>
+        Hunt Ready
+      </div>
+      <div class="logo-sub">Workout Tracker</div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section-label">Main</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('log')">
+        <span class="nav-icon">✏️</span> Log Workout
+      </div>
+      <div class="nav-item" onclick="showPage('history')">
+        <span class="nav-icon">📋</span> History
+      </div>
+      <div class="nav-item" onclick="showPage('progress')">
+        <span class="nav-icon">📈</span> Progress
+      </div>
+      <div class="nav-section-label" style="margin-top:8px">Reference</div>
+      <div class="nav-item" onclick="showPage('program')">
+        <span class="nav-icon">🏕️</span> Program
+      </div>
+      <div class="nav-item" onclick="showPage('restrictions')">
+        <span class="nav-icon">⚠️</span> Restrictions
+      </div>
+    </nav>
+
+    <div class="phase-status" id="sidebar-phase">
+      <div class="phase-label">Current Phase</div>
+      <div class="phase-name" id="sidebar-phase-name">Phase 1 — Rebuild</div>
+      <div class="phase-weeks" id="sidebar-phase-weeks">Weeks 1–4</div>
+      <div class="phase-bar"><div class="phase-fill" id="sidebar-phase-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="sidebar-footer">
+      C4–T1 Posterior Fusion Recovery<br>
+      Surgery: Dec 29, 2025
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="page-title">Dashboard</div>
+        <div class="topbar-sub" id="page-sub">Overview of your hunt prep progress</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn" onclick="exportData()">Export Data</button>
+        <button class="btn btn-primary" onclick="showPage('log')">+ Log Workout</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD PAGE -->
+      <div id="page-dashboard" class="page active">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Total Workouts</div>
+            <div class="stat-val stat-accent" id="stat-total">0</div>
+            <div class="stat-sub">sessions logged</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">This Week</div>
+            <div class="stat-val" id="stat-week">0</div>
+            <div class="stat-sub">of 3–4 target</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Current Streak</div>
+            <div class="stat-val stat-amber" id="stat-streak">0</div>
+            <div class="stat-sub">weeks consistent</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Days to Season</div>
+            <div class="stat-val" id="stat-days">—</div>
+            <div class="stat-sub">TX archery opens</div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div>
+            <div class="card mb16">
+              <div class="card-header">
+                <div class="card-title">16-Week Training Calendar</div>
+                <div style="font-size:11px;color:var(--text3)" id="heat-range"></div>
+              </div>
+              <div class="card-body">
+                <div class="heat-grid" id="heat-grid"></div>
+                <div class="heat-legend">
+                  <div class="heat-swatch" style="background:var(--border)"></div> No session
+                  <div class="heat-swatch" style="background:var(--accent3)"></div> Workout
+                  <div class="heat-swatch" style="background:var(--accent)"></div> Strong session
+                  <div class="heat-swatch" style="background:rgba(212,135,42,0.25)"></div> Rest / Active recovery
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Phase Progress</div>
+              </div>
+              <div class="card-body">
+                <div class="progress-section">
+                  <div class="prog-label"><span class="prog-name">Phase 1 — Rebuild (Wks 1–4)</span><span class="prog-val" id="p1-pct">0%</span></div>
+                  <div class="prog-bar"><div class="prog-fill fill-green" id="p1-bar" style="width:0%"></div></div>
+                </div>
+                <div class="progress-section">
+                  <div class="prog-label"><span class="prog-name">Phase 2 — Build (Wks 5–10)</span><span class="prog-val" id="p2-pct">0%</span></div>
+                  <div class="prog-bar"><div class="prog-fill fill-amber" id="p2-bar" style="width:0%"></div></div>
+                </div>
+                <div class="progress-section">
+                  <div class="prog-label"><span class="prog-name">Phase 3 — Hunt Prep (Wks 11–16)</span><span class="prog-val" id="p3-pct">0%</span></div>
+                  <div class="prog-bar"><div class="prog-fill fill-red" id="p3-bar" style="width:0%"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="countdown-block mb16">
+              <div class="countdown-num" id="days-countdown">—</div>
+              <div class="countdown-label">Days Until TX Archery Season</div>
+              <div class="countdown-date">Texas archery opens ~Sept 27, 2025</div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Recent Sessions</div>
+              </div>
+              <div class="session-list" id="recent-sessions">
+                <div class="empty-state">
+                  <div class="empty-icon">🏕️</div>
+                  No sessions logged yet.<br>Hit Log Workout to get started.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOG WORKOUT PAGE -->
+      <div id="page-log" class="page">
+        <div class="restriction-banner">
+          <div class="restriction-icon">⚠️</div>
+          <div class="restriction-text"><strong>Spine reminder:</strong> No overhead pressing, no axial loading, no barbell back squat/deadlifts. Stop any exercise causing radiating symptoms to arms or hands. Keep neck neutral at all times.</div>
+        </div>
+
+        <div class="log-layout">
+          <div>
+            <div class="section-title mb16">Select Day Type</div>
+            <div class="day-selector mb24">
+              <button class="day-btn active" onclick="selectDay('A')">Day A — Lower</button>
+              <button class="day-btn" onclick="selectDay('B')">Day B — Upper</button>
+              <button class="day-btn" onclick="selectDay('C')">Day C — Cardio</button>
+              <button class="day-btn" onclick="selectDay('D')">Day D — Circuit</button>
+            </div>
+
+            <div class="section-title mb16">Phase</div>
+            <div class="day-selector mb24">
+              <button class="day-btn active" id="phase-btn-1" onclick="selectPhase(1)">Phase 1</button>
+              <button class="day-btn" id="phase-btn-2" onclick="selectPhase(2)">Phase 2</button>
+              <button class="day-btn" id="phase-btn-3" onclick="selectPhase(3)">Phase 3</button>
+            </div>
+
+            <div class="card mb16">
+              <div class="card-header">
+                <div class="card-title" id="exercise-table-title">Day A — Lower Body + Cardio</div>
+                <div style="font-size:11px;color:var(--text3)">Log sets, reps, and weight</div>
+              </div>
+              <table class="exercise-table" id="exercise-table">
+                <thead>
+                  <tr>
+                    <th style="width:38%">Exercise</th>
+                    <th>Target</th>
+                    <th>Sets</th>
+                    <th>Reps</th>
+                    <th>Weight</th>
+                    <th>Done</th>
+                  </tr>
+                </thead>
+                <tbody id="exercise-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="card mb16">
+              <div class="card-header"><div class="card-title">Session Details</div></div>
+              <div class="card-body">
+                <div class="metric-field mb16">
+                  <label>Date</label>
+                  <input type="date" class="input-full" id="log-date">
+                </div>
+                <div class="metric-field mb16">
+                  <label>Duration (minutes)</label>
+                  <input type="number" class="input-full" id="log-duration" placeholder="e.g. 52" min="1" max="90">
+                </div>
+                <div class="metric-field mb16">
+                  <label>How did you feel?</label>
+                  <div class="feel-btns">
+                    <div class="feel-btn" onclick="selectFeel(this,'💀')" title="Brutal">💀</div>
+                    <div class="feel-btn" onclick="selectFeel(this,'😤')" title="Tough">😤</div>
+                    <div class="feel-btn selected" onclick="selectFeel(this,'💪')" title="Good">💪</div>
+                    <div class="feel-btn" onclick="selectFeel(this,'🔥')" title="Strong">🔥</div>
+                    <div class="feel-btn" onclick="selectFeel(this,'🎯')" title="Perfect">🎯</div>
+                  </div>
+                </div>
+                <div class="metric-field mb16">
+                  <label>Any symptoms? (neck, arm, hand)</label>
+                  <div class="feel-btns">
+                    <div class="feel-btn" id="sympt-none" onclick="selectSymptom('none')" style="flex:2;font-size:12px;padding:6px 4px;">✅ None</div>
+                    <div class="feel-btn" id="sympt-mild" onclick="selectSymptom('mild')" style="flex:2;font-size:12px;padding:6px 4px;">⚡ Mild</div>
+                    <div class="feel-btn" id="sympt-stop" onclick="selectSymptom('stop')" style="flex:2;font-size:12px;padding:6px 4px;">🛑 Stopped</div>
+                  </div>
+                </div>
+                <div class="metric-field mb16">
+                  <label>Notes</label>
+                  <textarea class="notes-area" id="log-notes" placeholder="Observations, weight increases, how exercises felt..."></textarea>
+                </div>
+                <button class="btn btn-primary" style="width:100%;padding:10px;font-size:14px" onclick="saveWorkout()">Save Session</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><div class="card-title">Cardio Logged</div></div>
+              <div class="card-body">
+                <div class="metric-field mb16">
+                  <label>Machine</label>
+                  <select class="input-full" id="cardio-machine">
+                    <option value="">— none —</option>
+                    <option>Treadmill incline walk</option>
+                    <option>Elliptical</option>
+                    <option>Recumbent bike</option>
+                    <option>Rowing machine</option>
+                    <option>Stationary bike</option>
+                  </select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div class="metric-field">
+                    <label>Duration (min)</label>
+                    <input type="number" class="input-full" id="cardio-duration" placeholder="20">
+                  </div>
+                  <div class="metric-field">
+                    <label>Incline / Level</label>
+                    <input type="number" class="input-full" id="cardio-incline" placeholder="8%">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY PAGE -->
+      <div id="page-history" class="page">
+        <div id="history-list" class="history-list">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            No workouts logged yet.
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESS PAGE -->
+      <div id="page-progress" class="page">
+        <div class="stats-row mb24">
+          <div class="stat-card">
+            <div class="stat-label">Total Sessions</div>
+            <div class="stat-val stat-accent" id="prog-total">0</div>
+            <div class="stat-sub">of ~48 target (16 wks)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Time</div>
+            <div class="stat-val" id="prog-time">0</div>
+            <div class="stat-sub stat-unit">minutes trained</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Symptom-Free Sessions</div>
+            <div class="stat-val stat-accent" id="prog-clean">0</div>
+            <div class="stat-sub">no radiating symptoms</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Avg Session</div>
+            <div class="stat-val" id="prog-avg">—</div>
+            <div class="stat-sub">minutes</div>
+          </div>
+        </div>
+
+        <div class="progress-grid mb24">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Phase Completion</div></div>
+            <div class="card-body">
+              <div class="phase-tracker">
+                <div class="phase-row">
+                  <div class="phase-icon icon-p1">P1</div>
+                  <div class="phase-info">
+                    <div class="phase-row-name">Rebuild — Weeks 1–4</div>
+                    <div class="phase-row-detail" id="p1-detail">0 of ~12 sessions</div>
+                  </div>
+                  <div class="phase-row-bar">
+                    <div class="prog-bar"><div class="prog-fill fill-green" id="prog-p1-bar" style="width:0%"></div></div>
+                  </div>
+                  <div class="phase-row-pct" id="prog-p1-pct">0%</div>
+                </div>
+                <div class="phase-row">
+                  <div class="phase-icon icon-p2">P2</div>
+                  <div class="phase-info">
+                    <div class="phase-row-name">Build — Weeks 5–10</div>
+                    <div class="phase-row-detail" id="p2-detail">0 of ~18 sessions</div>
+                  </div>
+                  <div class="phase-row-bar">
+                    <div class="prog-bar"><div class="prog-fill fill-amber" id="prog-p2-bar" style="width:0%"></div></div>
+                  </div>
+                  <div class="phase-row-pct" id="prog-p2-pct">0%</div>
+                </div>
+                <div class="phase-row">
+                  <div class="phase-icon icon-p3">P3</div>
+                  <div class="phase-info">
+                    <div class="phase-row-name">Hunt Prep — Weeks 11–16</div>
+                    <div class="phase-row-detail" id="p3-detail">0 of ~18 sessions</div>
+                  </div>
+                  <div class="phase-row-bar">
+                    <div class="prog-bar"><div class="prog-fill fill-red" id="prog-p3-bar" style="width:0%"></div></div>
+                  </div>
+                  <div class="phase-row-pct" id="prog-p3-pct">0%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">Body Metrics</div></div>
+            <div class="card-body">
+              <div class="metric-input-row">
+                <div class="metric-field">
+                  <label>Weight (lbs)</label>
+                  <input type="number" class="input-full" id="metric-weight" placeholder="—">
+                </div>
+                <div class="metric-field">
+                  <label>Waist (in)</label>
+                  <input type="number" class="input-full" id="metric-waist" placeholder="—">
+                </div>
+                <div class="metric-field">
+                  <label>Date</label>
+                  <input type="date" class="input-full" id="metric-date">
+                </div>
+              </div>
+              <button class="btn btn-primary" style="width:100%" onclick="saveMetrics()">Save Metrics</button>
+              <div id="metrics-history" style="margin-top:14px"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Workout Type Breakdown</div></div>
+          <div class="card-body" id="breakdown-body">
+            <div style="display:flex;gap:20px;flex-wrap:wrap" id="breakdown-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRAM PAGE -->
+      <div id="page-program" class="page">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+          <div class="card">
+            <div class="card-header" style="border-bottom:2px solid var(--accent)"><div class="card-title" style="color:var(--accent2)">Phase 1 — Rebuild</div></div>
+            <div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.6">
+              <strong style="color:var(--text)">Weeks 1–4</strong><br>
+              3 days/week · 45–55 min<br><br>
+              Light loads, machines preferred. Re-establish motor patterns. Build base cardio. Zero spine incidents.<br><br>
+              <strong style="color:var(--text)">Day A:</strong> Leg press, seated curl, leg ext, calf raise, glute bridge + 15 min incline walk<br><br>
+              <strong style="color:var(--text)">Day B:</strong> Chest press (machine), cable row, lat pulldown, pec deck, curls, pushdowns + dead bug / bird dog<br><br>
+              <strong style="color:var(--text)">Day C:</strong> 3-round circuit — incline walk, BW squat, cable row, plank
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="border-bottom:2px solid var(--amber)"><div class="card-title" style="color:var(--amber2)">Phase 2 — Build</div></div>
+            <div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.6">
+              <strong style="color:var(--text)">Weeks 5–10</strong><br>
+              3–4 days/week · 50–60 min<br><br>
+              Increase loads. Add unilateral work. Cardio builds to 20–25 min sustained. Start single-leg training for terrain work.<br><br>
+              <strong style="color:var(--text)">Day A:</strong> Leg press, walking lunge, single-leg press, leg curl, single-leg calf + 18 min incline walk<br><br>
+              <strong style="color:var(--text)">Day B:</strong> Incline DB press, lat pulldown, cable row, face pull, hammer curl, rope pushdown + Pallof press / plank<br><br>
+              <strong style="color:var(--text)">Day C:</strong> 45 min cardio — incline walk + elliptical + rower<br><br>
+              <strong style="color:var(--text)">Day D (opt):</strong> 4-round circuit + bike intervals
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="border-bottom:2px solid var(--red)"><div class="card-title" style="color:var(--red2)">Phase 3 — Hunt Prep</div></div>
+            <div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.6">
+              <strong style="color:var(--text)">Weeks 11–16</strong><br>
+              3–4 days/week · 55–60 min<br><br>
+              Pack simulation. Unilateral strength. Long sustained cardio. Shoulder endurance for bow draw.<br><br>
+              <strong style="color:var(--text)">Day A:</strong> Heavy leg press, Bulgarian split squat, loaded step-up, glute bridge, calf + 20 min pack walk (15–20 lb)<br><br>
+              <strong style="color:var(--text)">Day B:</strong> Heavy pulldown + row, face pull (4×20), incline DB, single-arm row, external rotation + Pallof / plank<br><br>
+              <strong style="color:var(--text)">Day C:</strong> 50 min cardio — incline walk 8–12% + elliptical + rower<br><br>
+              <strong style="color:var(--text)">Day D (opt):</strong> Hunt simulation circuit — pack walk + step-up + cable row + Pallof + bike intervals
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESTRICTIONS PAGE -->
+      <div id="page-restrictions" class="page">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="card">
+            <div class="card-header" style="border-bottom:2px solid var(--red)"><div class="card-title" style="color:var(--red2)">⛔ Never Do (C4–T1 Fusion)</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text2)">
+                <div style="padding:8px;background:rgba(196,64,48,0.07);border-radius:4px">Overhead pressing of any kind</div>
+                <div style="padding:8px;background:rgba(196,64,48,0.07);border-radius:4px">Lat pulldown behind the neck</div>
+                <div style="padding:8px;background:rgba(196,64,48,0.07);border-radius:4px">Barbell back squat (axial loading)</div>
+                <div style="padding:8px;background:rgba(196,64,48,0.07);border-radius:4px">Any deadlift variation (until surgeon clears)</div>
+                <div style="padding:8px;background:rgba(196,64,48,0.07);border-radius:4px">Contact, impact, or falling-risk activities</div>
+                <div style="padding:8px;background:rgba(196,64,48,0.07);border-radius:4px">Exercises causing neck, arm, or hand symptoms</div>
+                <div style="padding:8px;background:rgba(196,64,48,0.07);border-radius:4px">Bow draw/dry fire until surgeon explicitly clears you</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="border-bottom:2px solid var(--accent)"><div class="card-title" style="color:var(--accent2)">✅ Form Cues (Every Session)</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text2)">
+                <div style="padding:8px;background:rgba(143,179,57,0.07);border-radius:4px">Neutral neck at all times — no chin-tucking or craning</div>
+                <div style="padding:8px;background:rgba(143,179,57,0.07);border-radius:4px">Face pulls / rows: retract scapulae, don't shrug</div>
+                <div style="padding:8px;background:rgba(143,179,57,0.07);border-radius:4px">Treadmill incline: light rail contact for balance only</div>
+                <div style="padding:8px;background:rgba(143,179,57,0.07);border-radius:4px">Watch for tingling in ring/pinky (ulnar nerve — stop)</div>
+                <div style="padding:8px;background:rgba(143,179,57,0.07);border-radius:4px">No spotter pressure on neck or traps</div>
+                <div style="padding:8px;background:rgba(143,179,57,0.07);border-radius:4px">7–8 hrs sleep — non-negotiable for fusion healing</div>
+                <div style="padding:8px;background:rgba(143,179,57,0.07);border-radius:4px">0.8–1g protein per lb bodyweight daily</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-title" id="modal-title">Session Detail</div>
+    <div id="modal-body"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="document.getElementById('modal-overlay').classList.remove('open')">Close</button>
+      <button class="btn" style="color:var(--red2);border-color:rgba(196,64,48,0.3)" id="modal-delete-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────
+const PROGRAM_START = new Date('2026-06-04');
+const SEASON_DATE   = new Date('2026-09-26'); // TX archery ~late Sept
+
+const EXERCISES = {
+  A: {
+    1: [
+      {name:'Recumbent bike (warm-up)', target:'8 min'},
+      {name:'Leg press (machine)', target:'3×12'},
+      {name:'Seated leg curl', target:'3×12'},
+      {name:'Leg extension', target:'3×12'},
+      {name:'Standing calf raise', target:'3×15'},
+      {name:'Bodyweight glute bridge', target:'3×15'},
+      {name:'Treadmill incline walk (cardio)', target:'15 min'},
+    ],
+    2: [
+      {name:'Incline treadmill walk (warm-up)', target:'8 min'},
+      {name:'Leg press (heavier)', target:'4×10'},
+      {name:'Walking lunge', target:'3×10/leg'},
+      {name:'Single-leg press', target:'3×10/leg'},
+      {name:'Seated leg curl', target:'3×12'},
+      {name:'Single-leg calf raise', target:'3×15/leg'},
+      {name:'Treadmill 4% incline walk (cardio)', target:'18 min'},
+    ],
+    3: [
+      {name:'Incline treadmill walk (warm-up)', target:'8 min'},
+      {name:'Leg press (heavy)', target:'4×8'},
+      {name:'Bulgarian split squat', target:'3×8/leg'},
+      {name:'Step-up onto box (loaded DBs)', target:'3×10/leg'},
+      {name:'Glute bridge — weighted DB', target:'3×12'},
+      {name:'Single-leg calf raise', target:'3×15/leg'},
+      {name:'Treadmill pack walk 8–10% (cardio)', target:'20 min'},
+    ]
+  },
+  B: {
+    1: [
+      {name:'Elliptical (warm-up)', target:'8 min'},
+      {name:'Chest press machine', target:'3×12'},
+      {name:'Seated cable row', target:'3×12'},
+      {name:'Cable lat pulldown (front)', target:'3×12'},
+      {name:'Pec deck / fly machine', target:'3×12'},
+      {name:'Dumbbell curl (seated)', target:'2×12'},
+      {name:'Cable tricep pushdown', target:'2×12'},
+      {name:'Dead bug (core)', target:'3×8/side'},
+      {name:'Bird dog (core)', target:'3×8/side'},
+    ],
+    2: [
+      {name:'Elliptical (warm-up)', target:'8 min'},
+      {name:'Incline DB press (30°)', target:'3×10'},
+      {name:'Cable lat pulldown', target:'4×10'},
+      {name:'Seated cable row', target:'4×10'},
+      {name:'Cable face pull', target:'3×15'},
+      {name:'DB hammer curl', target:'3×12'},
+      {name:'Tricep rope pushdown', target:'3×12'},
+      {name:'Pallof press (anti-rotation)', target:'3×10/side'},
+      {name:'Plank — forearm', target:'3×30 sec'},
+    ],
+    3: [
+      {name:'Elliptical (warm-up)', target:'8 min'},
+      {name:'Cable lat pulldown (heavy)', target:'4×8'},
+      {name:'Seated cable row (heavy)', target:'4×8'},
+      {name:'Cable face pull (high reps)', target:'4×20'},
+      {name:'Incline DB press', target:'3×10'},
+      {name:'Single-arm DB row (braced)', target:'3×10/side'},
+      {name:'External rotation — cable/band', target:'3×15/side'},
+      {name:'Pallof press', target:'3×12/side'},
+      {name:'Plank — hold for time', target:'3×45 sec'},
+    ]
+  },
+  C: {
+    1: [
+      {name:'Bike/elliptical easy (warm-up)', target:'5 min'},
+      {name:'Incline treadmill walk (circuit)', target:'5 min ×3'},
+      {name:'Bodyweight squat (circuit)', target:'15 reps ×3'},
+      {name:'Standing cable row (circuit)', target:'15 reps ×3'},
+      {name:'Plank (forearm, neutral neck) (circuit)', target:'20 sec ×3'},
+      {name:'Easy bike (cool-down)', target:'5 min'},
+      {name:'Hip flexor / calf stretch', target:'5 min'},
+    ],
+    2: [
+      {name:'Treadmill incline walk 5–8%', target:'20 min'},
+      {name:'Elliptical moderate', target:'15 min'},
+      {name:'Rowing machine', target:'10 min'},
+      {name:'Easy bike (cool-down)', target:'5 min'},
+      {name:'Lower body stretching', target:'5 min'},
+    ],
+    3: [
+      {name:'Treadmill incline walk 8–12%', target:'30 min'},
+      {name:'Elliptical sustained moderate', target:'15 min'},
+      {name:'Rowing machine', target:'5 min'},
+      {name:'Easy flat walk + stretching', target:'10 min'},
+    ]
+  },
+  D: {
+    1: [
+      {name:'Bike/elliptical easy (warm-up)', target:'5 min'},
+      {name:'Incline treadmill walk (circuit)', target:'5 min ×4'},
+      {name:'Bodyweight squat (circuit)', target:'15 reps ×4'},
+      {name:'Standing cable row (circuit)', target:'15 reps ×4'},
+      {name:'Plank (circuit)', target:'20 sec ×4'},
+      {name:'Bike intervals 30s hard / 60s easy', target:'×8'},
+    ],
+    2: [
+      {name:'Goblet squat — light KB', target:'12 reps ×4'},
+      {name:'Cable row', target:'12 reps ×4'},
+      {name:'Step-up onto bench', target:'10/leg ×4'},
+      {name:'Chest press machine', target:'12 reps ×4'},
+      {name:'Plank or dead bug', target:'20–30 sec ×4'},
+      {name:'Bike intervals 30s/60s', target:'×8'},
+    ],
+    3: [
+      {name:'Incline treadmill walk 10%', target:'5 min ×4'},
+      {name:'Step-up with pack (15–20 lb)', target:'10/leg ×4'},
+      {name:'Single-arm cable row', target:'12/side ×4'},
+      {name:'Pallof press', target:'10/side ×4'},
+      {name:'Bike intervals 30s/60s', target:'×10'},
+    ]
+  }
+};
+
+const DAY_NAMES = {
+  A:'Day A — Lower Body + Cardio',
+  B:'Day B — Upper Push/Pull',
+  C:'Day C — Cardio Endurance',
+  D:'Day D — Full Body Circuit'
+};
+
+let state = {
+  workouts: [],
+  metrics: [],
+  currentDay: 'A',
+  currentPhase: 1,
+  selectedFeel: '💪',
+  selectedSymptom: 'none',
+  deleteTarget: null
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('hunt_ready_v1');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state.workouts = parsed.workouts || [];
+      state.metrics = parsed.metrics || [];
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  localStorage.setItem('hunt_ready_v1', JSON.stringify({
+    workouts: state.workouts,
+    metrics: state.metrics
+  }));
+}
+
+// ── NAVIGATION ──────────────────────────────────────────
+const PAGE_INFO = {
+  dashboard:    {title:'Dashboard', sub:'Overview of your hunt prep progress'},
+  log:          {title:'Log Workout', sub:'Record today\'s session'},
+  history:      {title:'History', sub:'All logged sessions'},
+  progress:     {title:'Progress', sub:'Stats, metrics, and phase completion'},
+  program:      {title:'Program Reference', sub:'16-week hunt prep plan overview'},
+  restrictions: {title:'Restrictions & Cues', sub:'C4–T1 fusion safety guidelines'}
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+  });
+  const info = PAGE_INFO[id];
+  document.getElementById('page-title').textContent = info.title;
+  document.getElementById('page-sub').textContent = info.sub;
+  if(id === 'dashboard') renderDashboard();
+  if(id === 'history') renderHistory();
+  if(id === 'progress') renderProgress();
+  if(id === 'log') { setLogDate(); renderExerciseTable(); }
+}
+
+// ── LOG WORKOUT ─────────────────────────────────────────
+function setLogDate() {
+  const d = document.getElementById('log-date');
+  if(!d.value) d.value = new Date().toISOString().split('T')[0];
+}
+
+function selectDay(day) {
+  state.currentDay = day;
+  document.querySelectorAll('.day-btn').forEach((b,i)=>{
+    const days = ['A','B','C','D'];
+    b.classList.toggle('active', b.textContent.startsWith('Day '+day));
+  });
+  document.querySelectorAll('.day-selector:first-of-type .day-btn').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('onclick').includes("'"+day+"'"));
+  });
+  document.getElementById('exercise-table-title').textContent = DAY_NAMES[day];
+  renderExerciseTable();
+}
+
+function selectPhase(p) {
+  state.currentPhase = p;
+  document.getElementById('phase-btn-1').classList.toggle('active', p===1);
+  document.getElementById('phase-btn-2').classList.toggle('active', p===2);
+  document.getElementById('phase-btn-3').classList.toggle('active', p===3);
+  renderExerciseTable();
+}
+
+function renderExerciseTable() {
+  const exList = (EXERCISES[state.currentDay]||{})[state.currentPhase] || [];
+  const tbody = document.getElementById('exercise-tbody');
+  tbody.innerHTML = exList.map((ex,i) => `
+    <tr>
+      <td>
+        <div class="ex-row-name">${ex.name}</div>
+        <div class="ex-row-target">Target: ${ex.target}</div>
+      </td>
+      <td style="color:var(--text3);font-size:12px">${ex.target}</td>
+      <td><input type="number" class="input-sm" id="sets-${i}" placeholder="—" min="0" max="20"></td>
+      <td><input type="number" class="input-sm" id="reps-${i}" placeholder="—" min="0" max="100"></td>
+      <td><input type="number" class="input-sm" id="wt-${i}" placeholder="BW" min="0"></td>
+      <td>
+        <div class="check-btn" id="check-${i}" onclick="toggleCheck(${i})"></div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function toggleCheck(i) {
+  const btn = document.getElementById('check-'+i);
+  btn.classList.toggle('checked');
+  btn.textContent = btn.classList.contains('checked') ? '✓' : '';
+}
+
+function selectFeel(el, emoji) {
+  document.querySelectorAll('.feel-btn').forEach(b=>{
+    if(['💀','😤','💪','🔥','🎯'].includes(b.textContent)) b.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  state.selectedFeel = emoji;
+}
+
+function selectSymptom(type) {
+  ['none','mild','stop'].forEach(t=>{
+    document.getElementById('sympt-'+t)?.classList.toggle('selected', t===type);
+  });
+  state.selectedSymptom = type;
+}
+
+function saveWorkout() {
+  const date = document.getElementById('log-date').value;
+  const duration = parseInt(document.getElementById('log-duration').value)||0;
+  const notes = document.getElementById('log-notes').value;
+  const cardioMachine = document.getElementById('cardio-machine').value;
+  const cardioDur = document.getElementById('cardio-duration').value;
+  const cardioIncline = document.getElementById('cardio-incline').value;
+
+  if(!date) { showToast('Pick a date first'); return; }
+
+  const exList = (EXERCISES[state.currentDay]||{})[state.currentPhase] || [];
+  const exercises = exList.map((ex,i)=>{
+    const checked = document.getElementById('check-'+i)?.classList.contains('checked');
+    return {
+      name: ex.name,
+      target: ex.target,
+      sets: document.getElementById('sets-'+i)?.value||'',
+      reps: document.getElementById('reps-'+i)?.value||'',
+      weight: document.getElementById('wt-'+i)?.value||'BW',
+      done: checked
+    };
+  });
+
+  const completedCount = exercises.filter(e=>e.done).length;
+
+  const workout = {
+    id: Date.now(),
+    date,
+    day: state.currentDay,
+    phase: state.currentPhase,
+    duration,
+    feel: state.selectedFeel,
+    symptom: state.selectedSymptom,
+    notes,
+    cardio: {machine:cardioMachine, duration:cardioDur, incline:cardioIncline},
+    exercises,
+    completedCount
+  };
+
+  state.workouts.unshift(workout);
+  saveState();
+  renderDashboard();
+  showToast('Session saved — good work!');
+  // Reset form
+  document.getElementById('log-notes').value = '';
+  document.getElementById('log-duration').value = '';
+  document.getElementById('cardio-duration').value = '';
+  document.getElementById('cardio-incline').value = '';
+  document.getElementById('cardio-machine').value = '';
+  renderExerciseTable();
+}
+
+// ── DASHBOARD ────────────────────────────────────────────
+function renderDashboard() {
+  const workouts = state.workouts;
+  const total = workouts.length;
+
+  // week workouts
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  const thisWeek = workouts.filter(w=> new Date(w.date) >= startOfWeek).length;
+
+  // streak (weeks with 3+ sessions)
+  let streak = 0;
+  for(let wk=0; wk<16; wk++) {
+    const wkStart = new Date(PROGRAM_START); wkStart.setDate(wkStart.getDate() + wk*7);
+    const wkEnd = new Date(wkStart); wkEnd.setDate(wkEnd.getDate()+7);
+    const cnt = workouts.filter(w=>{const d=new Date(w.date);return d>=wkStart&&d<wkEnd;}).length;
+    if(cnt>=3) streak++; else if(wkStart < now) break;
+  }
+
+  // days to season
+  const daysLeft = Math.max(0,Math.ceil((SEASON_DATE-now)/(1000*60*60*24)));
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-week').textContent = thisWeek;
+  document.getElementById('stat-streak').textContent = streak;
+  document.getElementById('stat-days').textContent = daysLeft;
+  document.getElementById('days-countdown').textContent = daysLeft;
+
+  // phase bars
+  const p1 = workouts.filter(w=>w.phase===1).length;
+  const p2 = workouts.filter(w=>w.phase===2).length;
+  const p3 = workouts.filter(w=>w.phase===3).length;
+  const p1pct = Math.min(100,Math.round(p1/12*100));
+  const p2pct = Math.min(100,Math.round(p2/18*100));
+  const p3pct = Math.min(100,Math.round(p3/18*100));
+  document.getElementById('p1-bar').style.width=p1pct+'%';
+  document.getElementById('p2-bar').style.width=p2pct+'%';
+  document.getElementById('p3-bar').style.width=p3pct+'%';
+  document.getElementById('p1-pct').textContent=p1pct+'%';
+  document.getElementById('p2-pct').textContent=p2pct+'%';
+  document.getElementById('p3-pct').textContent=p3pct+'%';
+
+  // sidebar phase
+  const currentWk = Math.floor((now-PROGRAM_START)/(7*24*60*60*1000));
+  let phaseName='Phase 1 — Rebuild', phaseWks='Weeks 1–4', phasePct=0;
+  if(currentWk<4){phaseName='Phase 1 — Rebuild';phaseWks='Weeks 1–4';phasePct=Math.round(currentWk/4*100);}
+  else if(currentWk<10){phaseName='Phase 2 — Build';phaseWks='Weeks 5–10';phasePct=Math.round((currentWk-4)/6*100);}
+  else{phaseName='Phase 3 — Hunt Prep';phaseWks='Weeks 11–16';phasePct=Math.round((currentWk-10)/6*100);}
+  document.getElementById('sidebar-phase-name').textContent=phaseName;
+  document.getElementById('sidebar-phase-weeks').textContent=phaseWks;
+  document.getElementById('sidebar-phase-fill').style.width=Math.min(100,phasePct)+'%';
+
+  // heat grid
+  const heatGrid = document.getElementById('heat-grid');
+  const heatRange = document.getElementById('heat-range');
+  const days = 112; // 16 weeks
+  const cells = [];
+  for(let d=0;d<days;d++){
+    const cellDate = new Date(PROGRAM_START);
+    cellDate.setDate(cellDate.getDate()+d);
+    const dateStr = cellDate.toISOString().split('T')[0];
+    const match = workouts.find(w=>w.date===dateStr);
+    const isToday = dateStr === now.toISOString().split('T')[0];
+    let cls = 'heat-cell';
+    if(match){
+      cls += match.completedCount >= 5 ? ' done strong' : ' done';
+    }
+    if(isToday) cls += ' today';
+    const title = match ? `${dateStr}: Day ${match.day}, Phase ${match.phase}, ${match.completedCount} exercises` : dateStr;
+    cells.push(`<div class="${cls}" title="${title}"></div>`);
+  }
+  heatGrid.innerHTML = cells.join('');
+  const endDate = new Date(PROGRAM_START); endDate.setDate(endDate.getDate()+112);
+  heatRange.textContent = `${PROGRAM_START.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${endDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+
+  // recent sessions
+  const recentEl = document.getElementById('recent-sessions');
+  const recent = workouts.slice(0,6);
+  if(!recent.length){
+    recentEl.innerHTML=`<div class="empty-state"><div class="empty-icon">🏕️</div>No sessions logged yet.<br>Hit Log Workout to get started.</div>`;
+    return;
+  }
+  const dotClass = {A:'dot-a',B:'dot-b',C:'dot-c',D:'dot-d'};
+  recentEl.innerHTML = recent.map(w=>`
+    <div class="session-item" onclick="openWorkout(${w.id})">
+      <div class="session-dot ${dotClass[w.day]||'dot-a'}"></div>
+      <div class="session-info">
+        <div class="session-name">Day ${w.day} — ${DAY_NAMES[w.day]?.split('—')[1]?.trim()||''}</div>
+        <div class="session-meta">${formatDate(w.date)} · Phase ${w.phase} · ${w.duration||'—'} min · ${w.completedCount}/${(EXERCISES[w.day]?.[w.phase]||[]).length} exercises</div>
+      </div>
+      <div class="session-rating">${w.feel}</div>
+    </div>
+  `).join('');
+}
+
+// ── HISTORY ──────────────────────────────────────────────
+function renderHistory() {
+  const listEl = document.getElementById('history-list');
+  if(!state.workouts.length){
+    listEl.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div>No workouts logged yet.</div>`;
+    return;
+  }
+  const phaseTag = p=>p===1?'tag-phase1':p===2?'tag-phase2':'tag-phase3';
+  const dayTag = d=>d==='A'||d==='B'?'tag-strength':d==='C'?'tag-cardio':'tag-circuit';
+  const dayType = d=>d==='A'||d==='B'?'Strength':d==='C'?'Cardio':'Circuit';
+  listEl.innerHTML = state.workouts.map(w=>{
+    const d = new Date(w.date+'T12:00:00');
+    return `
+    <div class="history-card" onclick="openWorkout(${w.id})">
+      <div class="history-date-block">
+        <div class="history-day">${d.getDate()}</div>
+        <div class="history-month">${d.toLocaleDateString('en-US',{month:'short',year:'2-digit'})}</div>
+      </div>
+      <div class="history-divider"></div>
+      <div class="history-body">
+        <div class="history-title">${DAY_NAMES[w.day]} ${w.feel}</div>
+        <div class="history-tags">
+          <span class="tag ${phaseTag(w.phase)}">Phase ${w.phase}</span>
+          <span class="tag ${dayTag(w.day)}">${dayType(w.day)}</span>
+          ${w.symptom!=='none'?`<span class="tag" style="background:rgba(196,64,48,0.15);color:var(--red2)">${w.symptom==='stop'?'🛑 Stopped':'⚡ Mild symptoms'}</span>`:''}
+        </div>
+        <div class="history-stats">${w.duration||'—'} min · ${w.completedCount} exercises done${w.cardio?.machine?' · '+w.cardio.machine+(w.cardio.duration?' '+w.cardio.duration+' min':'')+' '+( w.cardio.incline?w.cardio.incline+'%':''):''}</div>
+        ${w.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px;font-style:italic">"${w.notes.slice(0,80)}${w.notes.length>80?'…':''}"</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── PROGRESS ─────────────────────────────────────────────
+function renderProgress() {
+  const ws = state.workouts;
+  const total = ws.length;
+  const totalTime = ws.reduce((a,w)=>a+(w.duration||0),0);
+  const clean = ws.filter(w=>w.symptom==='none').length;
+  const avg = total ? Math.round(totalTime/total) : 0;
+  document.getElementById('prog-total').textContent=total;
+  document.getElementById('prog-time').textContent=totalTime;
+  document.getElementById('prog-clean').textContent=clean;
+  document.getElementById('prog-avg').textContent=avg||'—';
+
+  const p1=ws.filter(w=>w.phase===1).length;
+  const p2=ws.filter(w=>w.phase===2).length;
+  const p3=ws.filter(w=>w.phase===3).length;
+  const pct=(n,t)=>Math.min(100,Math.round(n/t*100));
+  document.getElementById('prog-p1-bar').style.width=pct(p1,12)+'%';
+  document.getElementById('prog-p2-bar').style.width=pct(p2,18)+'%';
+  document.getElementById('prog-p3-bar').style.width=pct(p3,18)+'%';
+  document.getElementById('prog-p1-pct').textContent=pct(p1,12)+'%';
+  document.getElementById('prog-p2-pct').textContent=pct(p2,18)+'%';
+  document.getElementById('prog-p3-pct').textContent=pct(p3,18)+'%';
+  document.getElementById('p1-detail').textContent=`${p1} of ~12 sessions`;
+  document.getElementById('p2-detail').textContent=`${p2} of ~18 sessions`;
+  document.getElementById('p3-detail').textContent=`${p3} of ~18 sessions`;
+
+  // breakdown
+  const days = {A:0,B:0,C:0,D:0};
+  ws.forEach(w=>{ if(days[w.day]!==undefined) days[w.day]++; });
+  const colors = {A:'var(--accent)',B:'var(--amber)',C:'#7a6fd4',D:'var(--red)'};
+  document.getElementById('breakdown-grid').innerHTML = Object.entries(days).map(([d,cnt])=>`
+    <div style="min-width:120px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:${colors[d]}">${cnt}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">${DAY_NAMES[d]}</div>
+    </div>
+  `).join('');
+
+  // metrics
+  document.getElementById('metric-date').value = new Date().toISOString().split('T')[0];
+  renderMetricsHistory();
+}
+
+function saveMetrics() {
+  const w = document.getElementById('metric-weight').value;
+  const wa = document.getElementById('metric-waist').value;
+  const date = document.getElementById('metric-date').value;
+  if(!date||(! w&&!wa)){showToast('Enter at least one metric');return;}
+  state.metrics.unshift({date, weight:w, waist:wa});
+  saveState();
+  renderMetricsHistory();
+  showToast('Metrics saved');
+}
+
+function renderMetricsHistory() {
+  const el = document.getElementById('metrics-history');
+  if(!state.metrics.length){el.innerHTML='<div style="font-size:12px;color:var(--text3)">No metrics logged yet.</div>';return;}
+  el.innerHTML=`<div style="font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Recent entries</div>`+
+  state.metrics.slice(0,4).map(m=>`
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--text3)">${formatDate(m.date)}</span>
+      <span style="color:var(--text)">${m.weight?m.weight+' lbs':''} ${m.waist?'· '+m.waist+'" waist':''}</span>
+    </div>
+  `).join('');
+}
+
+// ── MODAL ────────────────────────────────────────────────
+function openWorkout(id) {
+  const w = state.workouts.find(x=>x.id===id);
+  if(!w) return;
+  document.getElementById('modal-title').textContent = `${DAY_NAMES[w.day]} — ${formatDate(w.date)}`;
+  const exList = (EXERCISES[w.day]||{})[w.phase]||[];
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em">Phase</div><div style="font-size:16px;font-weight:500;color:var(--text)">${w.phase}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em">Duration</div><div style="font-size:16px;font-weight:500;color:var(--text)">${w.duration||'—'} min</div></div>
+      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em">Feel</div><div style="font-size:22px">${w.feel}</div></div>
+    </div>
+    <div style="font-size:12px;margin-bottom:10px;color:${w.symptom==='none'?'var(--accent2)':w.symptom==='mild'?'var(--amber2)':'var(--red2)'}">
+      Symptoms: ${w.symptom==='none'?'✅ None':w.symptom==='mild'?'⚡ Mild':'🛑 Stopped early'}
+    </div>
+    ${w.cardio?.machine?`<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Cardio: ${w.cardio.machine}${w.cardio.duration?' · '+w.cardio.duration+' min':''}${w.cardio.incline?' · '+w.cardio.incline+'%':''}</div>`:''}
+    ${w.exercises?.length?`
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <tr style="color:var(--text3)"><th style="text-align:left;padding:4px 6px">Exercise</th><th style="padding:4px 6px">Sets</th><th style="padding:4px 6px">Reps</th><th style="padding:4px 6px">Weight</th><th style="padding:4px 6px">Done</th></tr>
+      ${w.exercises.map(e=>`
+        <tr style="border-top:1px solid var(--border)">
+          <td style="padding:5px 6px;color:var(--text)">${e.name}</td>
+          <td style="text-align:center;padding:5px 6px;color:var(--text2)">${e.sets||'—'}</td>
+          <td style="text-align:center;padding:5px 6px;color:var(--text2)">${e.reps||'—'}</td>
+          <td style="text-align:center;padding:5px 6px;color:var(--text2)">${e.weight||'BW'}</td>
+          <td style="text-align:center;padding:5px 6px">${e.done?'✓':'–'}</td>
+        </tr>
+      `).join('')}
+    </table>`:''}
+    ${w.notes?`<div style="margin-top:10px;font-size:12px;color:var(--text2);font-style:italic;padding:8px;background:var(--bg3);border-radius:4px">"${w.notes}"</div>`:''}
+  `;
+  state.deleteTarget = id;
+  document.getElementById('modal-delete-btn').onclick = ()=>deleteWorkout(id);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function deleteWorkout(id) {
+  if(!confirm('Delete this session?')) return;
+  state.workouts = state.workouts.filter(w=>w.id!==id);
+  saveState();
+  document.getElementById('modal-overlay').classList.remove('open');
+  renderDashboard();
+  renderHistory();
+  showToast('Session deleted');
+}
+
+function closeModal(e){
+  if(e.target.id==='modal-overlay') document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ── UTILS ────────────────────────────────────────────────
+function formatDate(str) {
+  const d = new Date(str+'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({workouts:state.workouts,metrics:state.metrics,exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hunt_ready_data.json';
+  a.click();
+  showToast('Data exported');
+}
+
+// ── INIT ─────────────────────────────────────────────────
+loadState();
+renderDashboard();
+setLogDate();
+renderExerciseTable();
+document.getElementById('phase-btn-1').classList.add('active');
+
+// Initialize feel/symptom defaults
+document.querySelectorAll('.feel-btn').forEach(b=>{
+  if(b.textContent==='💪') b.classList.add('selected');
+});
+document.getElementById('sympt-none')?.classList.add('selected');
+</script>
+</body>
+</html>
